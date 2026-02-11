@@ -14,7 +14,30 @@ def test_nw_alignment():
     """
     seq1, _ = read_fasta("./data/test_seq1.fa")
     seq2, _ = read_fasta("./data/test_seq2.fa")
-    pass
+
+    sub_mat_file = "./substitution_matrices/BLOSUM62.mat"
+    gap_open = -10.0
+    gap_extend = -1.0
+
+    NW = NeedlemanWunsch(sub_mat_file, gap_open, gap_extend)
+    _, _, _ = NW.align(seq1, seq2)
+
+    # check that all -inf in the main body of matrices were replaced
+    assert np.isfinite(NW._align_matrix[0, 0]), "Initial align_matrix value still -inf"
+    assert np.all(np.isfinite(NW._align_matrix[1:, 1:])), "Some interior align_matrix values are still -inf!"
+
+    assert np.all(np.isfinite(NW._gapA_matrix[0, 1:])), "Initial gapA_matrix values are still -inf!"
+    assert np.all(np.isfinite(NW._gapA_matrix[2:, 2:])), "Some interior gapA_matrix values are still -inf!"
+
+    assert np.all(np.isfinite(NW._gapB_matrix[1:, 0])), "Initial gapB_matrix values are still -inf!"
+    assert np.all(np.isfinite(NW._gapB_matrix[2:, 2:])), "Some interior gapB_matrix values are still -inf!"
+
+    # assert that initial gap boundary conditions were handled correctly
+    assert NW._gapA_matrix[0, 1] == gap_open
+    assert NW._gapA_matrix[0, 2] == gap_open + gap_extend
+
+    assert NW._gapB_matrix[1, 0] == gap_open
+    assert NW._gapB_matrix[2, 0] == gap_open + gap_extend
     
 
 def test_nw_backtrace():
@@ -27,8 +50,17 @@ def test_nw_backtrace():
     """
     seq3, _ = read_fasta("./data/test_seq3.fa")
     seq4, _ = read_fasta("./data/test_seq4.fa")
-    pass
 
+    sub_mat_file = "./substitution_matrices/BLOSUM62.mat"
+    gap_open = -10.0
+    gap_extend = -1.0
+
+    NW = NeedlemanWunsch(sub_mat_file, gap_open, gap_extend)
+    align_score, seq3_align, seq4_align = NW.align(seq3, seq4)
+
+    assert align_score == 17
+    assert seq3_align == "MAVHQLIRRP"
+    assert seq4_align == "M---QLIRHP"
 
 
 
