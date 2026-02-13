@@ -138,11 +138,11 @@ class NeedlemanWunsch:
         # Initialize gap matrices, filling in i=0 and j=0 scenarios appropriately
         self._gapA_matrix = np.full((n+1, m+1), -np.inf, dtype=float)
         for j in range(1, m+1): # worst case scenario: we start a gap and just extend it for all seq B (no seq A to align)
-            self._gapA_matrix[0, j] = self.gap_open + (j-1)*self.gap_extend
+            self._gapA_matrix[0, j] = self.gap_open + j*self.gap_extend
 
         self._gapB_matrix = np.full((n+1, m+1), -np.inf, dtype=float)
         for i in range(1, n+1): # converse worst case scenario all gaps along seq A
-            self._gapB_matrix[i, 0] = self.gap_open + (i-1)*self.gap_extend
+            self._gapB_matrix[i, 0] = self.gap_open + i*self.gap_extend
 
         # Initialize backtracing matrices with zeroes 
         self._back = np.zeros((n+1, m+1))
@@ -156,21 +156,21 @@ class NeedlemanWunsch:
                 ij_pair = (self._seqA[i-1], self._seqB[j-1]) # funky bc of zero indexing
                 ij_align_score = self.sub_dict[ij_pair]
 
-                ## (1) Update align matrix
+                ## (1) Update align matrix -- explore the possibility of an alignment at this position
                 prev_opts = ( # prior to this ij alignment, could have come from:
                     self._align_matrix[i-1, j-1], # an alignment
                     self._gapA_matrix[i-1, j-1], # a gap in seq A
                     self._gapB_matrix[i-1, j-1] # a gap in seq B
                 )
 
-                # new ij alignment score will be best of those previous options, plus the score for ij alignment
+                # new possible ij alignment score will be best of those previous options, plus the score for ij alignment
                 self._align_matrix[i, j] = max(prev_opts) + ij_align_score
 
                 # store backtrace for which previous option new alignment is based on 
                 self._back[i, j] = np.argmax(prev_opts) # 0 = prev align, 1 = gap in A, 2 = gap in B
 
 
-                ## (2) Update gap A matrix
+                ## (2) Update gap A matrix  -- explore the possibility of a gap in A at this position
                 openA   = self._align_matrix[i, j-1] + self.gap_open + self.gap_extend
                 extendA = self._gapA_matrix[i, j-1] + self.gap_extend
 
@@ -182,7 +182,7 @@ class NeedlemanWunsch:
                     self._back_A[i, j] = 1  # 1 = extend a prev gap from gapA
                 
 
-                ## (3) Update gap B matrix
+                ## (3) Update gap B matrix -- explore the possibility of a gap in B at this position
                 openB   = self._align_matrix[i-1, j] + self.gap_open + self.gap_extend
                 extendB = self._gapB_matrix[i-1, j] + self.gap_extend
 
@@ -254,9 +254,9 @@ class NeedlemanWunsch:
                         # 0 = started new gap from prev being an alignment
                         # 1 = extend a prev gap from gapA
                     if gap_behavior == 0: 
-                        current_move = 0 # set current_move as from an alignment
+                        current_move = 0 # update next current_move as from an alignment
                     elif gap_behavior == 1: 
-                        current_move = 1 # set current_move as from gap in A
+                        current_move = 1 # update next current_move as from gap in A
                     j -= 1
     
                 else:
@@ -274,9 +274,9 @@ class NeedlemanWunsch:
                     # check stored gap behavior, update next backtrace move accordingly
                     gap_behavior = self._back_B[i, j]
                     if gap_behavior == 0: 
-                        current_move = 0 # set current_move as from an alignment
+                        current_move = 0 # update next current_move as from an alignment
                     elif gap_behavior == 1: 
-                        current_move = 2 # set current_move as from gap in B
+                        current_move = 2 # update next current_move as from gap in B
                     i -= 1
                 
                 else:

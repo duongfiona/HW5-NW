@@ -33,11 +33,11 @@ def test_nw_alignment():
     assert np.all(np.isfinite(NW._gapB_matrix[2:, 2:])), "Some interior gapB_matrix values are still -inf!"
 
     # assert that initial gap boundary conditions were handled correctly
-    assert NW._gapA_matrix[0, 1] == gap_open
-    assert NW._gapA_matrix[0, 2] == gap_open + gap_extend
+    assert NW._gapA_matrix[0, 1] == gap_open + gap_extend
+    assert NW._gapA_matrix[0, 2] == gap_open + 2*gap_extend
 
-    assert NW._gapB_matrix[1, 0] == gap_open
-    assert NW._gapB_matrix[2, 0] == gap_open + gap_extend
+    assert NW._gapB_matrix[1, 0] == gap_open + gap_extend
+    assert NW._gapB_matrix[2, 0] == gap_open + 2*gap_extend
     
 
 def test_nw_backtrace():
